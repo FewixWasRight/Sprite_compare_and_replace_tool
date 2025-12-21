@@ -4,6 +4,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import ttk
 import re
+from tkinter import filedialog
 
 
 # configs
@@ -27,7 +28,7 @@ def load_image(path):
 
 # roots
 root = tk.Tk()
-root.geometry("500x360")
+root.geometry("500x400")
 root.resizable(True, True)
 root.title("Sprite Compare & Replace Tool")
 
@@ -40,6 +41,7 @@ source_index = 0
 target_index = 0
 source_photo = None
 target_photo = None
+auto_delete_var = tk.BooleanVar(value=False)
 
 
 
@@ -47,14 +49,34 @@ target_photo = None
 folder_frame = tk.Frame(root)
 folder_frame.pack(pady=5)
 
+
+
+# explorer shenanigans
 tk.Label(folder_frame, text="Source sprites folder:").grid(row=0, column=0, sticky="e")
-source_path_entry = tk.Entry(folder_frame, width=60)
-source_path_entry.grid(row=0, column=1, padx=5)
+
+source_path_frame = tk.Frame(folder_frame)
+source_path_frame.grid(row=0, column=1, padx=5, sticky="ew")
+
+source_path_entry = tk.Entry(source_path_frame, width=50)
+source_path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+source_browse_button = tk.Button(source_path_frame, text="...", width=3)
+source_browse_button.pack(side=tk.RIGHT, padx=(5, 0))
+
 source_path_entry.insert(0, SOURCE_DIR)
 
+
 tk.Label(folder_frame, text="Target sprites folder:").grid(row=1, column=0, sticky="e")
-target_path_entry = tk.Entry(folder_frame, width=60)
-target_path_entry.grid(row=1, column=1, padx=5)
+
+target_path_frame = tk.Frame(folder_frame)
+target_path_frame.grid(row=1, column=1, padx=5, sticky="ew")
+
+target_path_entry = tk.Entry(target_path_frame, width=50)
+target_path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+target_browse_button = tk.Button(target_path_frame, text="...", width=3)
+target_browse_button.pack(side=tk.RIGHT, padx=(5, 0))
+
 target_path_entry.insert(0, TARGET_DIR)
 
 
@@ -75,22 +97,35 @@ target_image_label.grid(row=0, column=1, padx=20)
 source_var = tk.StringVar()
 target_var = tk.StringVar()
 
-source_combo = ttk.Combobox(image_frame, textvariable=source_var, width=30, state="readonly")
+source_combo = ttk.Combobox(image_frame, textvariable=source_var, width=30)
 source_combo.grid(row=1, column=0, pady=5)
 
-target_combo = ttk.Combobox(image_frame, textvariable=target_var, width=30, state="readonly")
+target_combo = ttk.Combobox(image_frame, textvariable=target_var, width=30)
 target_combo.grid(row=1, column=1, pady=5)
 
 
 
-# buttins
+# buttons and checkbox
 button_frame = tk.Frame(root)
 button_frame.pack(pady=10)
 
 tk.Button(button_frame, text="<< Source", command=lambda: change_source(-1)).grid(row=0, column=0)
-tk.Button(button_frame, text="Source >>", command=lambda: change_source(1)).grid(row=0, column=1)
+tk.Button(button_frame, text="Source >>", command=lambda: change_source(1)).grid(row=0, column=1, padx=(0, 70))
 tk.Button(button_frame, text="<< Target", command=lambda: change_target(-1)).grid(row=0, column=2)
 tk.Button(button_frame, text="Target >>", command=lambda: change_target(1)).grid(row=0, column=3)
+
+
+
+# auto deletion checkbox
+checkbox_frame = tk.Frame(root)
+checkbox_frame.pack(pady=5)
+auto_delete_checkbox = tk.Checkbutton(
+    checkbox_frame, 
+    text="Automatic source deletion", 
+    variable=auto_delete_var,
+    command=lambda: update_replace_button_color()
+)
+auto_delete_checkbox.pack()
 
 replace_button = tk.Button(
     root,
@@ -127,8 +162,10 @@ def load_files():
     source_combo["values"] = source_files
     target_combo["values"] = target_files
 
-    source_var.set(source_files[0] if source_files else "")
-    target_var.set(target_files[0] if target_files else "")
+    if source_files:
+        source_var.set(source_files[0])
+    if target_files:
+        target_var.set(target_files[0])
 
 def safe_update_images():
     global source_photo, target_photo
@@ -167,14 +204,115 @@ def change_target(delta):
 def replace_target():
     if not source_files or not target_files:
         return
+    
     src = os.path.join(source_path_entry.get(), source_files[source_index])
     tgt = os.path.join(target_path_entry.get(), target_files[target_index])
+    
     shutil.copy(src, tgt)
     print(f"Replaced {target_files[target_index]} with {source_files[source_index]}")
+    
+    # deletion
+    if auto_delete_var.get():
+        try:
+            os.remove(src)
+            print(f"Deleted source file: {source_files[source_index]}")
+            
+            refresh_folders()
+            
+            if not source_files:
+                print("No source files :(")
+        except Exception as e:
+            print(f"Error deleting source file: {e}")
+            
+            refresh_folders()
+    else:
+        change_source(1)
+
+def update_replace_button_color():
+    if auto_delete_var.get():
+        replace_button.config(bg="darkred", fg="white")
+    else:
+        replace_button.config(bg="red", fg="white")
 
 def refresh_folders():
     load_files()
     safe_update_images()
+
+
+
+# autocomplete on TAB
+def autocomplete_source(event):
+    current = source_var.get().strip()
+    if not current:
+        return "break"
+    
+    matches = [f for f in source_files if f.lower().startswith(current.lower())]
+    if matches:
+        source_var.set(matches[0])
+        source_combo.icursor(tk.END)
+        return "break"
+    return None
+
+def autocomplete_target(event):
+    current = target_var.get().strip()
+    if not current:
+        return "break"
+    
+    matches = [f for f in target_files if f.lower().startswith(current.lower())]
+    if matches:
+        target_var.set(matches[0])
+        target_combo.icursor(tk.END)
+        return "break"
+    return None
+
+def on_source_enter(event):
+    current = source_var.get().strip()
+    if current in source_files:
+        set_source_index(current)
+        safe_update_images()
+    else:
+        # nearest match source
+        matches = [f for f in source_files if current.lower() in f.lower()]
+        if matches:
+            source_var.set(matches[0])
+            set_source_index(matches[0])
+            safe_update_images()
+
+def on_target_enter(event):
+    current = target_var.get().strip()
+    if current in target_files:
+        set_target_index(current)
+        safe_update_images()
+    else:
+        # nearest match target
+        matches = [f for f in target_files if current.lower() in f.lower()]
+        if matches:
+            target_var.set(matches[0])
+            set_target_index(matches[0])
+            safe_update_images()
+
+
+
+# explorer browser
+def browse_source_folder():
+    folder_selected = filedialog.askdirectory(
+        initialdir=source_path_entry.get(),
+        title="Select Source Sprites Folder"
+    )
+    if folder_selected:
+        source_path_entry.delete(0, tk.END)
+        source_path_entry.insert(0, folder_selected)
+        refresh_folders()
+
+def browse_target_folder():
+    folder_selected = filedialog.askdirectory(
+        initialdir=target_path_entry.get(),
+        title="Select Target Sprites Folder"
+    )
+    if folder_selected:
+        target_path_entry.delete(0, tk.END)
+        target_path_entry.insert(0, folder_selected)
+        refresh_folders()
 
 
 
@@ -193,6 +331,20 @@ target_combo.bind(
     )
 )
 
+# bind TAB
+source_combo.bind("<Tab>", autocomplete_source)
+target_combo.bind("<Tab>", autocomplete_target)
+
+# bind ENTER
+source_combo.bind("<Return>", on_source_enter)
+target_combo.bind("<Return>", on_target_enter)
+
+
+
+# browser button
+source_browse_button.config(command=browse_source_folder)
+target_browse_button.config(command=browse_target_folder)
+
 def set_source_index(value):
     global source_index
     if value in source_files:
@@ -206,11 +358,12 @@ def set_target_index(value):
         safe_update_images()
 
 refresh_button = tk.Button(folder_frame, text="Refresh", command=refresh_folders)
-refresh_button.grid(row=2, column=1, pady=5)
+refresh_button.grid(row=2, column=0, columnspan=2, pady=(10, 0))
 
 
 
 # init
 load_files()
+update_replace_button_color()
 root.after(100, safe_update_images)
 root.mainloop()
