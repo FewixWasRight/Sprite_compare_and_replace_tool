@@ -9,8 +9,7 @@ You have two different Minecraft resourcepacks, the one is on 1.20.2 and the oth
 =========================================
 
 The UI is extremely simple:
-
-=========================================
+.
 
 - You have two folder paths. One is for SOURCE sprites, the other is for TARGET sprites. TARGET sprites are the ones you're replacing with SOURCE sprites. Don't mix them up.
 
@@ -27,8 +26,7 @@ The UI is extremely simple:
 =========================================
 
  How it looks like:
-
- =========================================
+ .
 
 ![](https://github.com/FewixWasRight/Sprite_compare_and_replace_tool/blob/main/Screenshot_2.png)
 
