@@ -14,5 +14,3 @@ When changing folder path, press refresh.
 You can search for the textures in drop-down menus. There's also autofill that took me a lot of time to figure out.
 
 There are 4 buttons at the bottom. They're cycling through all sprites one by one.
-
-![say gex](https://ibb.co/NnNHVLTr)
