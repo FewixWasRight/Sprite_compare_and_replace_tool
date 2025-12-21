@@ -1,8 +1,6 @@
-===============================
+![](https://github.com/FewixWasRight/Sprite_compare_and_replace_tool/blob/main/ascii-art-text.png)
 
- Sprite Compare & Replace Tool
-
-===============================
+=========================================
 
 A tool that allows one to easily replace sprites/other png images from one place in another while also renaming them. Example:
 
@@ -26,5 +24,12 @@ The UI is extremely simple:
 
 - Auto-delete checkbox makes it so when you turn it on, it auto-deletes the source file you've just used to replace the target sprite. Also makes the Replace button darker JUST IN CASE you haven't noticed that the checkbox is on.
 
+=========================================
+
+ How it looks like:
+
+ =========================================
+
+![](https://github.com/FewixWasRight/Sprite_compare_and_replace_tool/blob/main/Screenshot_2.png)
 
 *works with .png images only
