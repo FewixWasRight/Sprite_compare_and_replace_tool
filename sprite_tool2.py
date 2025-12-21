@@ -99,9 +99,11 @@ target_var = tk.StringVar()
 
 source_combo = ttk.Combobox(image_frame, textvariable=source_var, width=30)
 source_combo.grid(row=1, column=0, pady=5)
+source_combo.config(state="normal")
 
 target_combo = ttk.Combobox(image_frame, textvariable=target_var, width=30)
 target_combo.grid(row=1, column=1, pady=5)
+target_combo.config(state="normal")
 
 
 
@@ -139,11 +141,14 @@ replace_button.pack(pady=10)
 
 
 # image loading
-def load_files():
+def load_files(preserve_indices=True):
     global source_files, target_files, source_index, target_index
 
     src = source_path_entry.get()
     tgt = target_path_entry.get()
+
+    old_source = source_files[source_index] if source_files and source_index < len(source_files) else None
+    old_target = target_files[target_index] if target_files and target_index < len(target_files) else None
 
     source_files = []
     target_files = []
@@ -156,16 +161,30 @@ def load_files():
         target_files = [f for f in os.listdir(tgt) if f.lower().endswith(".png")]
         target_files.sort(key=natural_sort_key)
 
-    source_index = 0
-    target_index = 0
+    # restore source index
+    if preserve_indices and old_source in source_files:
+        source_index = source_files.index(old_source)
+    else:
+        source_index = min(source_index, max(len(source_files) - 1, 0))
+
+    # restore target index
+    if preserve_indices and old_target in target_files:
+        target_index = target_files.index(old_target)
+    else:
+        target_index = min(target_index, max(len(target_files) - 1, 0))
 
     source_combo["values"] = source_files
     target_combo["values"] = target_files
 
     if source_files:
-        source_var.set(source_files[0])
+        source_var.set(source_files[source_index])
+    else:
+        source_var.set("")
+
     if target_files:
-        target_var.set(target_files[0])
+        target_var.set(target_files[target_index])
+    else:
+        target_var.set("")
 
 def safe_update_images():
     global source_photo, target_photo
@@ -204,29 +223,23 @@ def change_target(delta):
 def replace_target():
     if not source_files or not target_files:
         return
-    
+
     src = os.path.join(source_path_entry.get(), source_files[source_index])
     tgt = os.path.join(target_path_entry.get(), target_files[target_index])
-    
+
     shutil.copy(src, tgt)
     print(f"Replaced {target_files[target_index]} with {source_files[source_index]}")
-    
-    # deletion
+
     if auto_delete_var.get():
         try:
             os.remove(src)
             print(f"Deleted source file: {source_files[source_index]}")
-            
-            refresh_folders()
-            
-            if not source_files:
-                print("No source files :(")
+            refresh_folders()  # keeps indices
         except Exception as e:
             print(f"Error deleting source file: {e}")
-            
             refresh_folders()
     else:
-        change_source(1)
+        safe_update_images()
 
 def update_replace_button_color():
     if auto_delete_var.get():
@@ -235,35 +248,23 @@ def update_replace_button_color():
         replace_button.config(bg="red", fg="white")
 
 def refresh_folders():
-    load_files()
+    load_files(preserve_indices=True)
     safe_update_images()
 
 
 
 # autocomplete on TAB
-def autocomplete_source(event):
-    current = source_var.get().strip()
+def autocomplete(combo, var, files):
+    current = var.get().strip()
     if not current:
         return "break"
-    
-    matches = [f for f in source_files if f.lower().startswith(current.lower())]
-    if matches:
-        source_var.set(matches[0])
-        source_combo.icursor(tk.END)
-        return "break"
-    return None
 
-def autocomplete_target(event):
-    current = target_var.get().strip()
-    if not current:
-        return "break"
-    
-    matches = [f for f in target_files if f.lower().startswith(current.lower())]
+    matches = [f for f in files if f.lower().startswith(current.lower())]
     if matches:
-        target_var.set(matches[0])
-        target_combo.icursor(tk.END)
-        return "break"
-    return None
+        var.set(matches[0])
+        combo.icursor(tk.END)
+    combo.focus_set()
+    return "break"
 
 def on_source_enter(event):
     current = source_var.get().strip()
@@ -332,8 +333,8 @@ target_combo.bind(
 )
 
 # bind TAB
-source_combo.bind("<Tab>", autocomplete_source)
-target_combo.bind("<Tab>", autocomplete_target)
+source_combo.bind("<Tab>", lambda e: autocomplete(source_combo, source_var, source_files))
+target_combo.bind("<Tab>", lambda e: autocomplete(target_combo, target_var, target_files))
 
 # bind ENTER
 source_combo.bind("<Return>", on_source_enter)
