@@ -1,4 +1,4 @@
-![](https://github.com/FewixWasRight/Sprite_compare_and_replace_tool/blob/main/ascii-art-text.png)
+![](https://github.com/FewixWasRight/Sprite_compare_and_replace_tool/blob/main/feather%20banner.png)
 
 =========================================
 
