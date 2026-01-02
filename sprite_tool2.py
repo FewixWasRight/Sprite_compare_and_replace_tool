@@ -1,3 +1,5 @@
+# imports
+
 import os
 import shutil
 import tkinter as tk
@@ -7,11 +9,15 @@ import re
 import winsound
 import sys
 
-# ---------------- CONFIG ----------------
+
+
+# conf
 SOURCE_DIR = r"C:\\"
 TARGET_DIR = r"C:\\"
 IMAGE_SIZE = 128
 THUMB_SIZE = 16
+
+
 
 # a bunch of defs
 def natural_sort_key(f):
@@ -27,12 +33,16 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-# ---------------- ROOT ----------------
+
+
+# window
 root = tk.Tk()
 root.geometry("720x550")
 root.title("Sprite Compare & Replace Tool")
 
-# ---------------- STATE ----------------
+
+
+# states
 source_files = []
 target_files = []
 source_index = 0
@@ -44,7 +54,9 @@ auto_delete_var = tk.BooleanVar(value=False)
 source_thumbs = {}
 target_thumbs = {}
 
-# ---------------- FOLDERS ----------------
+
+
+# folders
 folder_frame = tk.Frame(root)
 folder_frame.pack(pady=5, fill="x")
 
@@ -78,7 +90,9 @@ def folder_row(row, label, default):
 source_path_entry = folder_row(0, "Source folder:", SOURCE_DIR)
 target_path_entry = folder_row(1, "Target folder:", TARGET_DIR)
 
-# ---------------- IMAGES ----------------
+
+
+# img base
 image_frame = tk.Frame(root)
 image_frame.pack(pady=10)
 
@@ -119,7 +133,9 @@ tk.Button(
     command=lambda: step_target(1)
 ).grid(row=0, column=3)
 
-# ---------------- TREE + ENTRY ----------------
+
+
+# treeview
 tree_frame = tk.Frame(root)
 tree_frame.pack(pady=5)
 
@@ -145,7 +161,9 @@ tgt_frame, target_search, target_tree = make_panel(tree_frame, "Target sprites")
 src_frame.grid(row=0, column=0, padx=10)
 tgt_frame.grid(row=0, column=1, padx=10)
 
-# ---------------- LOAD FILES ----------------
+
+
+# load img
 def populate_tree(tree, files, folder, thumbs):
     tree.delete(*tree.get_children())
     thumbs.clear()
@@ -173,7 +191,9 @@ def load_files():
     populate_tree(source_tree, source_files, src, source_thumbs)
     populate_tree(target_tree, target_files, tgt, target_thumbs)
 
-# ---------------- IMAGE UPDATE ----------------
+
+
+# img update
 def update_images():
     global source_photo, target_photo
     if source_files and 0 <= source_index < len(source_files):
@@ -190,7 +210,9 @@ def update_images():
     else:
         target_image_label.config(text="No target image", image="")
 
-# ---------------- SELECTION ----------------
+
+
+# select
 def select_source(event):
     global source_index
     sel = source_tree.selection()
@@ -208,7 +230,9 @@ def select_target(event):
 source_tree.bind("<<TreeviewSelect>>", select_source)
 target_tree.bind("<<TreeviewSelect>>", select_target)
 
-# ---------------- SEARCH / FILTER ----------------
+
+
+# search
 def filter_tree(search, tree, files):
     query = search.get().lower()
     matches = [f for f in files if query in f.lower()]
@@ -224,6 +248,8 @@ source_search.bind("<KeyRelease>",
     lambda e: filter_tree(source_search, source_tree, source_files))
 target_search.bind("<KeyRelease>",
     lambda e: filter_tree(target_search, target_tree, target_files))
+
+
 
 # buttons def
 
@@ -247,7 +273,8 @@ def step_target(delta):
     target_tree.see(item)
     update_images()
 
-# ---------------- CONTROLS ----------------
+
+# left right
 control_frame = tk.Frame(root)
 control_frame.pack(pady=10)
 
@@ -276,7 +303,7 @@ refresh_button = tk.Button(folder_frame, text="Refresh", command=lambda: refresh
 refresh_button.grid(row=2, column=0, columnspan=2, pady=(10, 0))
 
 
-# ---------------- INIT ----------------
+# init
 def refresh_folders():
     load_files()
     update_images()
